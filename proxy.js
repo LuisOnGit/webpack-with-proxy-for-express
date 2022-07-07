@@ -8,7 +8,10 @@ function http_proxy(clientRequest, clientResponse) {
     const options = {
         host: clientRequestURL.host,
         port: clientRequestURL.port,
-        path: clientRequestURL.pathname
+        path: clientRequestURL.pathname,
+        method: clientRequestURL.method,
+        auth: clientRequestURL.auth,
+        headers: clientRequestURL.headers
     }
     const proxyRequest = http.request(options, (proxyResponse) => {
         proxyResponse.pipe(clientResponse, 
