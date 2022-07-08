@@ -9,13 +9,19 @@ proxyServer.listen(PORT, () => {
     console.log(`proxyServer started at ${PORT}`);
 });
 
+function log(clientRequest) {
+    console.log(`Connected from ${clientRequest.socket.remoteAddress}`);
+}
+
 //HTTP requests
 proxyServer.on('request', (clientRequest, clientResponse) => {
+    log(clientRequest);
     http_proxy(clientRequest, clientResponse);
 });
 
 //HTTPS request are done through CONNECT method
 proxyServer.on('connect', (clientRequest, clientSocket, head) => {
+    log(clientRequest);
     https_proxy(clientRequest, clientSocket, head);
 });
 
