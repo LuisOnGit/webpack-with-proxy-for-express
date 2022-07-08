@@ -3,7 +3,14 @@ const https = require('node:https');
 const net = require('node:net');
 const { URL } = require('node:url');
 
+function append_x_forwarded_for_header(clientRequest) {
+    clientRequest.headers['X-Forwarded-For'] = clientRequest
+                                                .socket
+                                                .remoteAddress;
+}
+
 function http_proxy(clientRequest, clientResponse) {
+    append_x_forwarded_for_header(clientRequest);
     const clientRequestURL = new URL(clientRequest.url);
     const options = {
         host: clientRequestURL.host,
@@ -21,6 +28,7 @@ function http_proxy(clientRequest, clientResponse) {
 }
 
 function https_proxy(clientRequest, clientSocket, head) {
+    append_x_forwarded_for_header(clientRequest);
     const { port, hostname } = new URL(`http://${clientRequest.url}`);
 
     const proxyRequest = net.connect(port, hostname, () => {
@@ -36,7 +44,6 @@ function https_proxy(clientRequest, clientSocket, head) {
         function end_proxy_request(error) {
             proxyRequest.end()
         }
-
         //handle error or connection close
         proxyRequest.on('error', end_proxy_request);
         proxyRequest.on('close', end_proxy_request);
