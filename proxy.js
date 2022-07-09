@@ -25,6 +25,13 @@ function http_proxy(clientRequest, clientResponse) {
             {end: true});
     });
     proxyRequest.end();
+    function end_proxy_request(error) {
+        proxyRequest.end()
+    }
+    proxyRequest.on('error', end_proxy_request);
+    proxyRequest.on('close', end_proxy_request);
+    clientRequest.on('close', end_proxy_request);
+    clientRequest.on('error', end_proxy_request);
 }
 
 function https_proxy(clientRequest, clientSocket, head) {
