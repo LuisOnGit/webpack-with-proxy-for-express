@@ -4,7 +4,11 @@ const { http_proxy, https_proxy} = require('./proxy');
 const proxyServer = http.createServer();
 
 function log(clientRequest) {
-    console.log(`Connected from ${clientRequest.socket.remoteAddress}`);
+    const headers = JSON.stringify(clientRequest.headers);
+    const httpVersion = clientRequest.httpVersion;
+    const httpMethod = clientRequest.method;
+    const remoteAddress = clientRequest.socket.remoteAddress;
+    console.log(`[${remoteAddress}] HTTP ${httpVersion} ${httpMethod} ${clientRequest.url}`);
 }
 
 //HTTP requests
