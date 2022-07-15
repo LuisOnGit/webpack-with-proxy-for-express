@@ -1,17 +1,39 @@
-const request = require('supertest');
-
 const { proxyServer } = require('../src/app');
 
-beforeAll(() => {
-});
+const axios = require('axios').default;
 
-function printError(error, response) {
-    if (error)
-        console.log(error);
+const PROXY_PORT       = 45667;
+
+async function request_through_proxy(url) {
+    return await axios.get(url, { proxy: 
+        {
+            proxy: 'http',
+            host: 'localhost',
+            port: PROXY_PORT,
+        }
+    });
 }
 
-test('GET / google.com', () => {
-    request(proxyServer)
-            .get('/')
-            .end(printError);
+beforeAll(() => {
+    proxyServer.listen(PROXY_PORT);
+});
+
+afterAll(() => {
+    proxyServer.close();
+});
+
+/*
+ * Needs internet connection in order to run the test
+ * */
+test('GET / http://google.com/', async () => {
+    const response = await request_through_proxy(`http://google.com/`);
+    expect(response.status).toBe(200);
+});
+
+/*
+ * Needs internet connection in order to run the test
+ * */
+test('GET / https://google.com', async () => {
+    const response = await request_through_proxy(`http://google.com/`);
+    expect(response.status).toBe(200);
 });
