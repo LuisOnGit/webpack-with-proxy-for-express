@@ -28,22 +28,6 @@ afterAll(() => {
     mockServer.close();
 });
 
-/*
- * Needs internet connection in order to run the test
- * */
-test('GET / http://google.com/', async () => {
-    const response = await request_through_proxy(`http://google.com/`);
-    expect(response.status).toBe(200);
-});
-
-/*
- * Needs internet connection in order to run the test
- * */
-test('GET / https://google.com', async () => {
-    const response = await request_through_proxy(`http://google.com/`);
-    expect(response.status).toBe(200);
-});
-
 test('GET / MockServer', async () => {
     const mock_response = 'Hello';
     const mock_status_code = 200;
