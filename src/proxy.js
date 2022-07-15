@@ -21,8 +21,8 @@ function http_proxy(clientRequest, clientResponse) {
         headers: clientRequest.headers
     }
     const proxyRequest = http.request(options, (proxyResponse) => {
-        proxyResponse.pipe(clientResponse, 
-            {end: true});
+        clientResponse.writeHead(proxyResponse.statusCode, proxyResponse.headers);
+        proxyResponse.pipe(clientResponse, {end: true});
     });
     proxyRequest.end();
     function end_proxy_request(error) {
