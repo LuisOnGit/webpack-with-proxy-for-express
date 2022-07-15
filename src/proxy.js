@@ -9,17 +9,25 @@ function append_x_forwarded_for_header(clientRequest) {
                                                 .remoteAddress;
 }
 
-function http_proxy(clientRequest, clientResponse) {
-    append_x_forwarded_for_header(clientRequest);
+function removePortFromURL(host) {
+    return host.substring(0, host.indexOf(':'));
+}
+
+function get_options(clientRequest) {
     const clientRequestURL = new URL(clientRequest.url);
-    const options = {
-        host: clientRequestURL.host,
+    return {
+        host: removePortFromURL(clientRequestURL.host),
         port: clientRequestURL.port,
         path: clientRequestURL.pathname,
         auth: clientRequestURL.auth,
-        method: clientRequest.method,
-        headers: clientRequest.headers
+        method: clientRequestURL.method,
+        headers: clientRequestURL.headers
     }
+}
+
+function http_proxy(clientRequest, clientResponse) {
+    append_x_forwarded_for_header(clientRequest);
+    const options = get_options(clientRequest);
     const proxyRequest = http.request(options, (proxyResponse) => {
         clientResponse.writeHead(proxyResponse.statusCode, proxyResponse.headers);
         proxyResponse.pipe(clientResponse, {end: true});
