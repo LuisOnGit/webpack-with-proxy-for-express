@@ -6,6 +6,7 @@ class MockServer {
         this.mockServer = '';
         this.response = 'Hello';
         this.statusCode = 200;
+        this.headers = [];
         this.default_get();
     }
 
@@ -27,9 +28,16 @@ class MockServer {
     setStatusCode(status_code) {
         this.statusCode = status_code;
     }
+    setHeader(header) {
+        this.headers.push(header);
+    }
 
     default_get() {
         this.get('/', (req, res) => {
+            this.headers.forEach( (header) => {
+                res.set(header);
+            });
+
             res.status(this.statusCode).send(this.response);
         });
     }
