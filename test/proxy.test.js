@@ -8,7 +8,7 @@ const mockServer = new MockServer();
 const PROXY_PORT       = 45667;
 const MOCK_SERVER_PORT = PROXY_PORT - 1;
 
-async function request_through_proxy(url = `http://localhost:${MOCK_SERVER_PORT}`) {
+async function get_request_through_proxy(url = `http://localhost:${MOCK_SERVER_PORT}`) {
     return await axios.get(url, { proxy: 
         {
             proxy: 'http',
@@ -34,7 +34,7 @@ test('GET / MockServer', async () => {
     mockServer.setResponse(mock_response);
     mockServer.setStatusCode(mock_status_code);
 
-    const response = await request_through_proxy();
+    const response = await get_request_through_proxy();
     expect(response.status).toBe(mock_status_code);
     expect(response.data).toBe(mock_response);
 });
@@ -45,7 +45,7 @@ test('GET / MockServer, check headers', async () => {
     mockServer.setResponse(response_text);
     mockServer.setHeader(header);
 
-    const response = await request_through_proxy();
+    const response = await get_request_through_proxy();
     expect(response.headers).toHaveProperty('x-powered-by', 'Express');
     expect(response.headers).toHaveProperty('content-type', 'text/html; charset=utf-8');
     expect(response.headers).toHaveProperty('content-length', response_text.length.toString());
@@ -57,5 +57,5 @@ test('GET / MockServer, check if the header x-forwarded-for header in server sid
         mockServer.getServerSideHeaders((serverHeaders) => {
             expect(serverHeaders).toHaveProperty('x-forwarded-for', '::1');
         });
-        const response = await request_through_proxy();
+        const response = await get_request_through_proxy();
 });
