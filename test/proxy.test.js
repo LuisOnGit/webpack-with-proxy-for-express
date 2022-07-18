@@ -51,3 +51,11 @@ test('GET / MockServer, check headers', async () => {
     expect(response.headers).toHaveProperty('content-length', response_text.length.toString());
     expect(response.headers).toHaveProperty('name', 'myproxy');
 });
+
+test('GET / MockServer, check if the header x-forwarded-for header in server side ', 
+    async () => {
+        mockServer.getServerSideHeaders((serverHeaders) => {
+            expect(serverHeaders).toHaveProperty('x-forwarded-for', '::1');
+        });
+        const response = await request_through_proxy();
+});

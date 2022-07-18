@@ -21,7 +21,7 @@ function get_options(clientRequest) {
         path: clientRequestURL.pathname,
         auth: clientRequestURL.auth,
         method: clientRequestURL.method,
-        headers: clientRequestURL.headers
+        headers: clientRequest.headers
     }
 }
 
