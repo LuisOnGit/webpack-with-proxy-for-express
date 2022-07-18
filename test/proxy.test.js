@@ -18,6 +18,16 @@ async function get_request_through_proxy(url = `http://localhost:${MOCK_SERVER_P
     });
 }
 
+async function post_request_through_proxy(url = `http://localhost:${MOCK_SERVER_PORT}`) {
+    return await axios.get(url, { proxy:
+        {
+            proxy: 'http',
+            host: 'localhost',
+            port: PROXY_PORT,
+        }
+    });
+}
+
 beforeAll(() => {
     proxyServer.listen(PROXY_PORT);
     mockServer.listen(MOCK_SERVER_PORT);
@@ -58,4 +68,37 @@ test('GET / MockServer, check if the header x-forwarded-for header in server sid
             expect(serverHeaders).toHaveProperty('x-forwarded-for', '::1');
         });
         const response = await get_request_through_proxy();
+});
+
+test('POST / MockServer', async () => {
+    const mock_response = 'Post response';
+    const mock_status_code = 200;
+    mockServer.setResponse(mock_response);
+    mockServer.setStatusCode(mock_status_code);
+
+    const response = await post_request_through_proxy();
+    expect(response.status).toBe(mock_status_code);
+    expect(response.data).toBe(mock_response);
+});
+
+test('POST / MockServer, check headers', async () => {
+    const response_text = 'Hello world';
+    const header = {'name': 'myproxy'};
+    mockServer.setResponse(response_text);
+    mockServer.setHeader(header);
+
+    const response = await post_request_through_proxy();
+    expect(response.headers).toHaveProperty('x-powered-by', 'Express');
+    expect(response.headers).toHaveProperty('content-type', 'text/html; charset=utf-8');
+    expect(response.headers).toHaveProperty('content-length', response_text.length.toString());
+    expect(response.headers).toHaveProperty('name', 'myproxy');
+});
+
+test('POST / MockServer, check if the header x-forwarded-for header in server side',
+    async () => {
+        mockServer.getServerSideHeaders((serverHeaders) => {
+            expect(serverHeaders).toHaveProperty('x-forwarded-for', '::1');
+        });
+        const response = await post_request_through_proxy();
+        expect(response.status).toBe(200);
 });
