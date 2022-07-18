@@ -9,6 +9,7 @@ class MockServer {
         this.headers = [];
         this.serverSideHeaderCallback = null;
         this.default_get();
+        this.default_post();
     }
 
     listen(port) {
@@ -38,17 +39,27 @@ class MockServer {
 
     default_get() {
         this.get('/', (req, res) => {
-            this.headers.forEach( (header) => {
-                res.set(header);
-            });
-
-            if (this.serverSideHeaderCallback != null) {
-                this.serverSideHeaderCallback(req.headers);
-                this.serverSideHeaderCallback = null;
-            }
-
-            res.status(this.statusCode).send(this.response);
+            this._resolve_request(req, res);
         });
+    }
+
+    default_post() {
+        this.post('/', (req, res) => {
+            this._resolve_request(req, res);
+        });
+    }
+
+    _resolve_request(req, res) {
+        this.headers.forEach( (header) => {
+            res.set(header);
+        });
+
+        if (this.serverSideHeaderCallback != null) {
+            this.serverSideHeaderCallback(req.headers);
+            this.serverSideHeaderCallback = null;
+        }
+
+        res.status(this.statusCode).send(this.response);
     }
 }
 
