@@ -7,6 +7,7 @@ class MockServer {
         this.response = 'Hello';
         this.statusCode = 200;
         this.headers = [];
+        this.serverSideHeaderCallback = null;
         this.default_get();
     }
 
@@ -31,12 +32,20 @@ class MockServer {
     setHeader(header) {
         this.headers.push(header);
     }
+    getServerSideHeaders(callback) {
+        this.serverSideHeaderCallback = callback;
+    }
 
     default_get() {
         this.get('/', (req, res) => {
             this.headers.forEach( (header) => {
                 res.set(header);
             });
+
+            if (this.serverSideHeaderCallback != null) {
+                this.serverSideHeaderCallback(req.headers);
+                this.serverSideHeaderCallback = null;
+            }
 
             res.status(this.statusCode).send(this.response);
         });
