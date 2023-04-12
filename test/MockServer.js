@@ -3,7 +3,7 @@ const express = require('express');
 class MockServer {
     constructor() {
         this.mockServerApp = express();
-        this.mockServer = '';
+        this.server = null;
         this.response = 'Hello';
         this.statusCode = 200;
         this.headers = [];
@@ -13,10 +13,10 @@ class MockServer {
     }
 
     listen(port) {
-        this.mockServer = this.mockServerApp.listen(port);
+        this.server = this.mockServerApp.listen(port);
     }
     close() {
-        this.mockServer.close();
+        this.server.close()
     }
     get(path, callback) {
         this.mockServerApp.get(path, callback);
