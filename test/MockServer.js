@@ -1,22 +1,37 @@
 const express = require('express');
 
+/*
+    This is a Mock HTTP server for automated testing.
+    The goal is to create a server where we can set the
+    expected output, status code, headers, etc for a specific
+    path.
+
+    The Mock Server is built using express therefore
+    it has the limitations of express. One "limitation" is
+    that once we have set a handler for a specific path it will
+    be giving that output until we instantiate other MockServer and
+    set a different handler.
+*/
+
 class MockServer {
     constructor() {
         this.mockServerApp = express();
         this.server = null;
-        this.response = 'Hello';
-        this.statusCode = 200;
-        this.headers = [];
         this.serverSideHeaderCallback = null;
-        this.default_get();
-        this.default_post();
     }
 
-    listen(port) {
-        this.server = this.mockServerApp.listen(port);
+    listen(callback = null) {
+        //When port is zero the OS assigns an arbitrary unused port, this is good
+        //for automated test
+        this.server = this.mockServerApp.listen(0, callback);
     }
-    close() {
-        this.server.close()
+    getPort() {
+        return (this.server !== null) ? this.server.address().port : null
+    }
+    close(callback) {
+        if (this.server !== null) {
+            this.server.close(callback)
+        }
     }
     get(path, callback) {
         this.mockServerApp.get(path, callback);
@@ -24,42 +39,8 @@ class MockServer {
     post(path, callback) {
         this.mockServerApp.post(path, callback);
     }
-    setResponse(response) {
-        this.response = response;
-    }
-    setStatusCode(status_code) {
-        this.statusCode = status_code;
-    }
-    setHeader(header) {
-        this.headers.push(header);
-    }
     getServerSideHeaders(callback) {
         this.serverSideHeaderCallback = callback;
-    }
-
-    default_get() {
-        this.get('/', (req, res) => {
-            this._resolve_request(req, res);
-        });
-    }
-
-    default_post() {
-        this.post('/', (req, res) => {
-            this._resolve_request(req, res);
-        });
-    }
-
-    _resolve_request(req, res) {
-        this.headers.forEach( (header) => {
-            res.set(header);
-        });
-
-        if (this.serverSideHeaderCallback != null) {
-            this.serverSideHeaderCallback(req.headers);
-            this.serverSideHeaderCallback = null;
-        }
-
-        res.status(this.statusCode).send(this.response);
     }
 }
 

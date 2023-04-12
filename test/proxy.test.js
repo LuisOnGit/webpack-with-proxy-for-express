@@ -1,15 +1,13 @@
 const { proxyServer } = require('../src/app');
 const { MockServer } = require('./MockServer');
-
 const axios = require('axios').default;
 
-const mockServer = new MockServer();
+const PROXY_PORT = 45667;
 
-const PROXY_PORT       = 45667;
-const MOCK_SERVER_PORT = PROXY_PORT - 1;
-
-async function get_request_through_proxy(url = `http://localhost:${MOCK_SERVER_PORT}`) {
-    return await axios.get(url, { proxy: 
+async function get_request_through_proxy(path, mockserver) {
+    const MOCK_SERVER_PORT = mockserver.getPort()
+    const URL = `http://localhost:${MOCK_SERVER_PORT}${path}`
+    return await axios.get(URL, { proxy: 
         {
             proxy: 'http',
             host: 'localhost',
@@ -18,8 +16,10 @@ async function get_request_through_proxy(url = `http://localhost:${MOCK_SERVER_P
     });
 }
 
-async function post_request_through_proxy(url = `http://localhost:${MOCK_SERVER_PORT}`) {
-    return await axios.get(url, { proxy:
+async function post_request_through_proxy(path, mockserver) {
+    const MOCK_SERVER_PORT = mockserver.getPort()
+    const URL = `http://localhost:${MOCK_SERVER_PORT}${path}`
+    return await axios.post(URL, { proxy:
         {
             proxy: 'http',
             host: 'localhost',
@@ -30,75 +30,102 @@ async function post_request_through_proxy(url = `http://localhost:${MOCK_SERVER_
 
 beforeAll(() => {
     proxyServer.listen(PROXY_PORT);
-    mockServer.listen(MOCK_SERVER_PORT);
+});
+afterAll(() => {
+    proxyServer.close()
 });
 
-afterAll(() => {
-    proxyServer.close();
-    mockServer.close();
-});
+/*
+    Instantiate a new MockServer for each test.
+    This is the easiest way to set a different
+    handler for the same path in every test
+*/
+beforeEach( () => {
+    this.mockserver = new MockServer()
+    this.mockserver.listen();
+})
+afterEach( (done) => {
+    this.mockserver.close( () => done() );
+})
 
 test('GET / MockServer', async () => {
-    const mock_response = 'Hello';
-    const mock_status_code = 200;
-    mockServer.setResponse(mock_response);
-    mockServer.setStatusCode(mock_status_code);
+    this.mockserver.get("/", (req, res) => {
+        (req)
+        res.status(200)
+        res.send('Hello')
+    })
 
-    const response = await get_request_through_proxy();
-    expect(response.status).toBe(mock_status_code);
-    expect(response.data).toBe(mock_response);
+    const response = await get_request_through_proxy("/", this.mockserver);
+    expect(response.status).toBe(200);
+    expect(response.data).toBe('Hello');
 });
 
 test('GET / MockServer, check headers', async () => {
-    const response_text = 'Hello world';
-    const header = {'name': 'myproxy'};
-    mockServer.setResponse(response_text);
-    mockServer.setHeader(header);
+    this.mockserver.get("/", (req, res) => {
+        (req)
+        res.status(200)
+        res.set({'name': 'myproxy'})
+        res.send('Hello world')
+    })
 
-    const response = await get_request_through_proxy();
+    const response = await get_request_through_proxy("/", this.mockserver);
     expect(response.headers).toHaveProperty('x-powered-by', 'Express');
     expect(response.headers).toHaveProperty('content-type', 'text/html; charset=utf-8');
-    expect(response.headers).toHaveProperty('content-length', response_text.length.toString());
+    expect(response.headers).toHaveProperty('content-length', 'Hello world'.length.toString());
     expect(response.headers).toHaveProperty('name', 'myproxy');
 });
 
 test('GET / MockServer, check if the header x-forwarded-for header in server side ', 
     async () => {
-        mockServer.getServerSideHeaders((serverHeaders) => {
+        this.mockserver.get("/", (req, res) => {
+            (req)
+            res.end()
+        })
+
+        this.mockserver.getServerSideHeaders((serverHeaders) => {
             expect(serverHeaders).toHaveProperty('x-forwarded-for', '::1');
         });
-        const response = await get_request_through_proxy();
+        const response = await get_request_through_proxy("/", this.mockserver);
 });
 
 test('POST / MockServer', async () => {
-    const mock_response = 'Post response';
-    const mock_status_code = 200;
-    mockServer.setResponse(mock_response);
-    mockServer.setStatusCode(mock_status_code);
+    this.mockserver.post("/", (req, res) => {
+        (req)
+        res.status(200)
+        res.send('Post response')
+    })
 
-    const response = await post_request_through_proxy();
-    expect(response.status).toBe(mock_status_code);
-    expect(response.data).toBe(mock_response);
+    const response = await post_request_through_proxy("/", this.mockserver);
+    expect(response.status).toBe(200);
+    expect(response.data).toBe('Post response');
 });
 
 test('POST / MockServer, check headers', async () => {
-    const response_text = 'Hello world';
-    const header = {'name': 'myproxy'};
-    mockServer.setResponse(response_text);
-    mockServer.setHeader(header);
+    this.mockserver.post("/", (req, res) => {
+        (req)
+        res.status(200)
+        res.set({'name': 'myproxy'})
+        res.send('Hello world')
+    })
 
-    const response = await post_request_through_proxy();
+    const response = await post_request_through_proxy("/", this.mockserver);
     expect(response.headers).toHaveProperty('x-powered-by', 'Express');
     expect(response.headers).toHaveProperty('content-type', 'text/html; charset=utf-8');
-    expect(response.headers).toHaveProperty('content-length', response_text.length.toString());
+    expect(response.headers).toHaveProperty('content-length', 'Hello world'.length.toString());
     expect(response.headers).toHaveProperty('name', 'myproxy');
 });
 
 test('POST / MockServer, check if the header x-forwarded-for header in server side',
     async () => {
-        mockServer.getServerSideHeaders((serverHeaders) => {
+
+        this.mockserver.post("/", (req, res) => {
+            (req)
+            res.end()
+        })
+
+        this.mockserver.getServerSideHeaders((serverHeaders) => {
             expect(serverHeaders).toHaveProperty('x-forwarded-for', '::1');
         });
-        const response = await post_request_through_proxy();
+        const response = await post_request_through_proxy("/", this.mockserver);
         expect(response.status).toBe(200);
 });
